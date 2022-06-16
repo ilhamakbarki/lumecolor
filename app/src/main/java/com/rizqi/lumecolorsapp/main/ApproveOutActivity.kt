@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.ProgressDialog
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -17,6 +20,7 @@ import android.view.Window
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +31,7 @@ import com.rizqi.lumecolorsapp.adapter.ApproveOutAdapter
 import com.rizqi.lumecolorsapp.adapter.TabQRList
 import com.rizqi.lumecolorsapp.api.GetDataService
 import com.rizqi.lumecolorsapp.api.RetrofitClients
+import com.rizqi.lumecolorsapp.helper.UnicodeFormatter
 import com.rizqi.lumecolorsapp.model.MApprove
 import com.rizqi.lumecolorsapp.model.MTabQR
 import com.rizqi.lumecolorsapp.response.*
@@ -37,9 +42,12 @@ import com.rizqi.lumecolorsapp.utils.SharedPreferencesUtils
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.IOException
+import java.io.OutputStream
+import java.nio.ByteBuffer
 import java.util.*
 
-class ApproveOutActivity : AppCompatActivity() {
+class ApproveOutActivity : AppCompatActivity(), Runnable {
     private lateinit var sharedPreferences: SharedPreferencesUtils
     private lateinit var _SPLEVEL: String
 
@@ -90,6 +98,16 @@ class ApproveOutActivity : AppCompatActivity() {
     var isSearch: Boolean = false
     var isAlamatShow: Boolean = false
 
+
+    private var mBluetoothSocket: BluetoothSocket? = null
+
+    var mBluetoothDevice: BluetoothDevice? = null
+
+    var mBluetoothAdapter: BluetoothAdapter? = null
+
+
+    private val applicationUUID = UUID
+        .fromString("00001101-0000-1000-8000-00805F9B34FB")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_approve_out)
@@ -1205,16 +1223,21 @@ class ApproveOutActivity : AppCompatActivity() {
                     ).show()
                     return
                 }
+                p1()
                 val bluetoothConnections = BluetoothPrintersConnections()
                 val allDevices = bluetoothConnections.list
                 Log.d("TEST", "onResponse: " + allDevices.contentDeepToString())
                 val connection = BluetoothPrintersConnections.selectFirstPaired();
+                Log.d("TEST", "onResponse: " + connection?.isConnected.toString());
                 if(connection!=null && connection.isConnected){
+                    Log.d("TEST", "MASUK: " + connection?.isConnected.toString());
+
                     val printer = EscPosPrinter(connection, 203, 48f, 32)
+                    this@ApproveOutActivity.p1()
                     res.data.forEach {
                         var text = "[L]<qrcode size='20'>"+it.id+"</qrcode>[R]"+it.id+"\n"
                         text+="[R]"+it.exp_date+"\n\n"
-                        Log.d("TEST", "onResponse: "+text)
+                        Log.d("TEST", "onResponseINPRINT: "+text)
                         printer.printFormattedTextAndCut(text)
                     }
                     printer.disconnectPrinter()
@@ -1290,6 +1313,141 @@ class ApproveOutActivity : AppCompatActivity() {
 
         })
     }
+
+    override fun run() {
+        try {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                Log.d("RUN FUN", "Bluetooth Permission aint granted")
+
+
+                return
+            }
+            mBluetoothSocket = mBluetoothDevice?.createRfcommSocketToServiceRecord(applicationUUID);
+            mBluetoothAdapter?.cancelDiscovery()
+            mBluetoothSocket?.connect()
+            Log.d("RUN FUN", "Connected")
+
+//            mHandler.sendEmptyMessage(0)
+        } catch (eConnectException: IOException) {
+            Log.d("RUN FUN", "CouldNotConnectToSocket", eConnectException)
+            mBluetoothSocket?.close()
+            return
+        }
+    }
+
+    fun p1() {
+        val t: Thread = object : Thread() {
+            override fun run() {
+                try {
+
+                    if (ActivityCompat.checkSelfPermission(
+                            this@ApproveOutActivity,
+                            Manifest.permission.BLUETOOTH_CONNECT
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        Log.d("RUN FUN", "Bluetooth Permission aint granted")
+                        ActivityCompat.requestPermissions(this@ApproveOutActivity,  arrayOf(Manifest.permission.BLUETOOTH_ADMIN),1);
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return
+                    }
+
+                    mBluetoothSocket = mBluetoothDevice?.createRfcommSocketToServiceRecord(applicationUUID);
+                    mBluetoothAdapter?.cancelDiscovery()
+                    mBluetoothSocket?.connect()
+                    Log.d("RUN FUN", "Connected")
+
+                    val os: OutputStream = mBluetoothSocket!!.outputStream
+                    var header = ""
+                    var he = ""
+                    var blank = ""
+                    var header2 = ""
+                    var BILL = ""
+                    var vio = ""
+                    var header3 = ""
+                    var mvdtail = ""
+                    var header4 = ""
+                    var offname = ""
+                    var time = ""
+                    var copy = ""
+                    val checktop_status = ""
+                    blank = "\n\n"
+                    he = "      EFULLTECH NIGERIA\n"
+                    he = "$he********************************\n\n"
+
+                    os.write(blank.toByteArray())
+                    os.write(he.toByteArray())
+
+
+                    // Setting height
+                    val gs = 29
+                    os.write(this@ApproveOutActivity.intToByteArray(gs).toInt())
+                    val h = 150
+                    os.write(this@ApproveOutActivity.intToByteArray(h).toInt())
+                    val n = 170
+                    os.write(this@ApproveOutActivity.intToByteArray(n).toInt())
+
+                    // Setting Width
+                    val gs_width = 29
+                    os.write(this@ApproveOutActivity.intToByteArray(gs_width).toInt())
+                    val w = 119
+                    os.write(this@ApproveOutActivity.intToByteArray(w).toInt())
+                    val n_width = 2
+                    os.write(this@ApproveOutActivity.intToByteArray(n_width).toInt())
+                } catch (e: Exception) {
+                    Log.e("PrintActivity", "Exe ", e)
+                }
+            }
+        }
+        t.start()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
+                                            grantResults: IntArray) {
+        when (requestCode) {
+            1 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] ==
+                    PackageManager.PERMISSION_GRANTED) {
+                    if ((ContextCompat.checkSelfPermission(this@ApproveOutActivity,
+                            Manifest.permission.ACCESS_FINE_LOCATION) ===
+                                PackageManager.PERMISSION_GRANTED)) {
+                        Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+        }
+    }
+
+    fun intToByteArray(value: Int): Byte {
+        val b = ByteBuffer.allocate(4).putInt(value).array()
+        for (k in b.indices) {
+            println(
+                "Selva  [" + k + "] = " + "0x"
+                        + UnicodeFormatter.byteToHex(b[k])
+            )
+        }
+        return b[3]
+    }
+
 
     private fun fetchListQR(data: MApprove) {
         emptyStateQR.visibility = View.VISIBLE
