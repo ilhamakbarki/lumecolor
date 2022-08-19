@@ -5,12 +5,12 @@ object Constants {
 //    BASE URL
 //    const val BASE_URL = "https://tes.smilink.id/api/"
 //    const val BASE_URL = "https://lumecolors.smilink.id/api/"
-    const val BASE_URL = "https://irs.exproone.com/api/"
+    const val BASE_URL = "https://lumecolors101.com/api/"
 
-    const val URL_GAMBAR = "http://irs.exproone.com/assets_user/images/produk/"
+    const val URL_GAMBAR = "https://lumecolors101.com/assets_user/images/produk/"
     const val URL_QR = "http://irs.exproone.com/assets_user/images/qrcode_stok/"
     const val URL_KARTU = "http://irs.exproone.com/report/kartu_stok/preview/"
-    const val URL_GAMBAR_QR = "http://irs.exproone.com/api/generate_qr/run/"
+    const val URL_GAMBAR_QR = "https://lumecolors101.com/api/generate_qr/run/"
 
 //    ANY VARIABLE
     const val STAT200 = 200
